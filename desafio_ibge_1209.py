@@ -4,6 +4,7 @@ Extração de dados da tabela 1209 do SIDRA/IBGE
 População com 60 anos ou mais por Unidades da Federação
 """
 
+import argparse
 import os
 import time
 from pathlib import Path
@@ -240,15 +241,22 @@ class SidraAutomation:
 
 def main():
     """Função principal"""
+    # Parse command-line arguments
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '--headless',
+        action='store_true',
+        help='Executa o navegador em modo headless (sem interface gráfica)'
+    )
+    args = parser.parse_args()
+
     try:
         # Criar instância da automação
-        # headless=False para ver o navegador em ação (útil para debug)
-        # headless=True para execução em background
-        automation = SidraAutomation(headless=False)
-        
+        automation = SidraAutomation(headless=args.headless)
+
         # Executar automação
         automation.run()
-        
+
     except KeyboardInterrupt:
         print("\n\n⚠ Automação interrompida pelo usuário")
     except Exception as e:
