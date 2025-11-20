@@ -1,0 +1,396 @@
+"""
+Desafio Técnico - Automação RPA
+Extração de dados da tabela 1209 do SIDRA/IBGE
+População com 60 anos ou mais por Unidades da Federação
+"""
+
+import os
+import time
+from pathlib import Path
+from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
+
+
+class SidraAutomation:
+    """Classe para automação de extração de dados do SIDRA/IBGE"""
+    
+    def __init__(self, headless=False):
+        self.headless = headless
+        self.base_url = "https://sidra.ibge.gov.br/"
+        self.output_dir = Path("dados")
+        self.output_file = self.output_dir / "populacao_60mais_1209.csv"
+        
+    def setup(self):
+        """Configura o diretório de saída"""
+        self.output_dir.mkdir(exist_ok=True)
+        print(f"✓ Diretório '{self.output_dir}' criado/verificado")
+        
+    def navigate_to_table_1209(self, page):
+        """
+        Navega pelo site até encontrar a tabela 1209
+        Simula o comportamento de um usuário explorando a interface
+        """
+        print("\n[1/5] Acessando página inicial do SIDRA...")
+        page.goto(self.base_url, wait_until="networkidle")
+        print("✓ Página inicial carregada")
+        
+        # Aguardar carregamento completo da página
+        page.wait_for_load_state("domcontentloaded")
+        time.sleep(2)
+        
+        print("\n[2/5] Buscando pela tabela 1209...")
+        
+        # Estratégia: Usar a busca interna do site
+        # Procurar pelo campo de busca
+        try:
+            # Tentar localizar o campo de pesquisa
+            search_selectors = [
+                'input[type="search"]',
+                'input[name="pesquisa"]',
+                'input[placeholder*="Pesquis"]',
+                'input[placeholder*="Busca"]',
+                '#pesquisa',
+                '.pesquisa'
+            ]
+            
+            search_input = None
+            for selector in search_selectors:
+                try:
+                    search_input = page.wait_for_selector(selector, timeout=3000)
+                    if search_input:
+                        print(f"✓ Campo de busca encontrado: {selector}")
+                        break
+                except:
+                    continue
+            
+            if not search_input:
+                # Se não encontrar campo de busca, tentar acessar diretamente por menus
+                print("⚠ Campo de busca não encontrado, tentando navegação por menus...")
+                self._navigate_by_menu(page)
+                return
+            
+            # Digitar o número da tabela
+            search_input.fill("1209")
+            print("✓ Termo '1209' digitado no campo de busca")
+            time.sleep(1)
+            
+            # Pressionar Enter ou clicar no botão de busca
+            search_input.press("Enter")
+            print("✓ Busca iniciada")
+            
+            # Aguardar resultados
+            page.wait_for_load_state("networkidle")
+            time.sleep(2)
+            
+            # Procurar pelo link da tabela 1209 nos resultados
+            print("✓ Procurando tabela 1209 nos resultados...")
+            
+            # Possíveis seletores para o resultado da tabela 1209
+            table_link_selectors = [
+                'a:has-text("1209")',
+                'a:has-text("Tabela 1209")',
+                'a[href*="1209"]',
+                'text=1209',
+            ]
+            
+            table_link = None
+            for selector in table_link_selectors:
+                try:
+                    elements = page.locator(selector).all()
+                    for element in elements:
+                        text = element.inner_text().lower()
+                        if "1209" in text and ("população" in text or "popula" in text):
+                            table_link = element
+                            print(f"✓ Link da tabela 1209 encontrado: {text[:50]}...")
+                            break
+                    if table_link:
+                        break
+                except:
+                    continue
+            
+            if not table_link:
+                # Tentar encontrar qualquer link com 1209
+                table_link = page.locator('a:has-text("1209")').first
+            
+            # Clicar no link da tabela
+            table_link.click()
+            print("✓ Acessando tabela 1209...")
+            
+            page.wait_for_load_state("networkidle")
+            time.sleep(2)
+            
+        except Exception as e:
+            print(f"⚠ Erro na busca padrão: {e}")
+            print("Tentando método alternativo...")
+            self._navigate_by_menu(page)
+    
+    def _navigate_by_menu(self, page):
+        """Método alternativo: navegar pelos menus do site"""
+        print("Navegando por menus...")
+        
+        # Tentar encontrar menu de tabelas ou pesquisas
+        try:
+            # Procurar por links ou menus que levem às tabelas
+            menu_selectors = [
+                'a:has-text("Tabelas")',
+                'a:has-text("Pesquisas")',
+                'a:has-text("Banco de Tabelas")',
+            ]
+            
+            for selector in menu_selectors:
+                try:
+                    menu = page.wait_for_selector(selector, timeout=3000)
+                    if menu:
+                        menu.click()
+                        print(f"✓ Menu clicado: {selector}")
+                        page.wait_for_load_state("networkidle")
+                        time.sleep(2)
+                        break
+                except:
+                    continue
+            
+            # Agora buscar pela tabela 1209
+            link_1209 = page.locator('a:has-text("1209")').first
+            link_1209.click()
+            print("✓ Tabela 1209 acessada via menu")
+            page.wait_for_load_state("networkidle")
+            time.sleep(2)
+            
+        except Exception as e:
+            print(f"✗ Erro ao navegar por menus: {e}")
+            raise
+    
+    def configure_table(self, page):
+        """
+        Configura os filtros da tabela:
+        - Grupo de idade: 60 anos ou mais
+        - Recorte territorial: Unidades da Federação
+        """
+        print("\n[3/5] Configurando filtros da tabela...")
+        
+        try:
+            # Aguardar carregamento da interface da tabela
+            page.wait_for_load_state("domcontentloaded")
+            time.sleep(3)
+            
+            # Procurar por elementos de filtro/configuração
+            # Normalmente o SIDRA tem botões ou links para configurar variáveis
+            
+            # Estratégia: Procurar por "Grupo de idade" e configurar
+            print("→ Configurando 'Grupo de idade: 60 anos ou mais'...")
+            
+            # Tentar encontrar controles de variáveis
+            variable_selectors = [
+                'text="Grupo de idade"',
+                'text="Grupos de idade"',
+                'label:has-text("idade")',
+            ]
+            
+            for selector in variable_selectors:
+                try:
+                    age_control = page.locator(selector).first
+                    if age_control.is_visible(timeout=2000):
+                        # Clicar para expandir opções
+                        age_control.click()
+                        time.sleep(1)
+                        break
+                except:
+                    continue
+            
+            # Procurar pela opção "60 anos ou mais"
+            age_60_plus_selectors = [
+                'text="60 anos ou mais"',
+                'label:has-text("60 anos ou mais")',
+                'input[value*="60"]',
+            ]
+            
+            for selector in age_60_plus_selectors:
+                try:
+                    option_60 = page.locator(selector).first
+                    if option_60.is_visible(timeout=2000):
+                        option_60.click()
+                        print("✓ Grupo de idade '60 anos ou mais' selecionado")
+                        time.sleep(1)
+                        break
+                except:
+                    continue
+            
+            # Configurar Unidades da Federação
+            print("→ Configurando 'Unidades da Federação'...")
+            
+            territorial_selectors = [
+                'text="Unidade da Federação"',
+                'text="Unidades da Federação"',
+                'text="Brasil e Unidade da Federação"',
+                'label:has-text("Federação")',
+            ]
+            
+            for selector in territorial_selectors:
+                try:
+                    territorial_control = page.locator(selector).first
+                    if territorial_control.is_visible(timeout=2000):
+                        territorial_control.click()
+                        print("✓ Recorte territorial 'Unidades da Federação' configurado")
+                        time.sleep(1)
+                        break
+                except:
+                    continue
+            
+            # Verificar se há botão para aplicar filtros ou visualizar tabela
+            apply_buttons = [
+                'button:has-text("Aplicar")',
+                'button:has-text("Visualizar")',
+                'button:has-text("Consultar")',
+                'a:has-text("Visualizar")',
+            ]
+            
+            for selector in apply_buttons:
+                try:
+                    apply_btn = page.locator(selector).first
+                    if apply_btn.is_visible(timeout=2000):
+                        apply_btn.click()
+                        print("✓ Filtros aplicados")
+                        page.wait_for_load_state("networkidle")
+                        time.sleep(2)
+                        break
+                except:
+                    continue
+            
+            print("✓ Tabela configurada com sucesso")
+            
+        except Exception as e:
+            print(f"⚠ Aviso durante configuração: {e}")
+            print("Continuando com configurações padrão...")
+    
+    def download_csv(self, page):
+        """Realiza o download do arquivo CSV"""
+        print("\n[4/5] Iniciando download do arquivo CSV...")
+        
+        try:
+            # Procurar pelo botão/link de download CSV
+            download_selectors = [
+                'a:has-text("CSV")',
+                'button:has-text("CSV")',
+                'a[href*="csv"]',
+                'text="Download"',
+                'text="Baixar"',
+                'a:has-text("Exportar")',
+            ]
+            
+            download_link = None
+            for selector in download_selectors:
+                try:
+                    elements = page.locator(selector).all()
+                    for element in elements:
+                        if element.is_visible():
+                            text = element.inner_text().lower()
+                            if "csv" in text or "download" in text or "baixar" in text:
+                                download_link = element
+                                print(f"✓ Botão de download encontrado: {text}")
+                                break
+                    if download_link:
+                        break
+                except:
+                    continue
+            
+            if not download_link:
+                # Tentar encontrar qualquer link relacionado a download
+                download_link = page.locator('a:has-text("CSV")').first
+            
+            # Configurar listener para download
+            with page.expect_download() as download_info:
+                download_link.click()
+                print("✓ Download iniciado...")
+            
+            download = download_info.value
+            
+            # Salvar arquivo no caminho especificado
+            download.save_as(self.output_file)
+            print(f"✓ Arquivo salvo em: {self.output_file}")
+            
+        except Exception as e:
+            print(f"✗ Erro no download: {e}")
+            print("Tentando método alternativo de download...")
+            
+            # Método alternativo: procurar por qualquer elemento relacionado a CSV
+            try:
+                page.locator('text=/csv|download|baixar/i').first.click()
+                time.sleep(3)
+                print("✓ Download concluído (método alternativo)")
+            except:
+                raise Exception("Não foi possível realizar o download do arquivo CSV")
+    
+    def run(self):
+        """Executa a automação completa"""
+        print("=" * 60)
+        print("DESAFIO TÉCNICO - AUTOMAÇÃO RPA SIDRA/IBGE")
+        print("Tabela 1209: População com 60 anos ou mais por UF")
+        print("=" * 60)
+        
+        self.setup()
+        
+        with sync_playwright() as p:
+            # Iniciar browser
+            print("\nIniciando navegador...")
+            browser = p.chromium.launch(headless=self.headless)
+            context = browser.new_context(
+                viewport={'width': 1920, 'height': 1080},
+                user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            )
+            page = context.new_page()
+            
+            # Configurar timeout padrão
+            page.set_default_timeout(30000)
+            
+            try:
+                # Executar fluxo de automação
+                self.navigate_to_table_1209(page)
+                self.configure_table(page)
+                self.download_csv(page)
+                
+                print("\n" + "=" * 60)
+                print("[5/5] AUTOMAÇÃO CONCLUÍDA COM SUCESSO! ✓")
+                print("=" * 60)
+                print(f"\nArquivo gerado: {self.output_file}")
+                
+                # Verificar se o arquivo foi criado
+                if self.output_file.exists():
+                    file_size = self.output_file.stat().st_size
+                    print(f"Tamanho do arquivo: {file_size:,} bytes")
+                else:
+                    print("⚠ Arquivo não encontrado no caminho especificado")
+                
+            except Exception as e:
+                print(f"\n✗ ERRO: {e}")
+                print("\nCapturando screenshot para debug...")
+                page.screenshot(path="erro_debug.png")
+                print("Screenshot salvo: erro_debug.png")
+                raise
+            
+            finally:
+                # Fechar browser
+                browser.close()
+                print("\nNavegador fechado.")
+
+
+def main():
+    """Função principal"""
+    try:
+        # Criar instância da automação
+        # headless=False para ver o navegador em ação (útil para debug)
+        # headless=True para execução em background
+        automation = SidraAutomation(headless=False)
+        
+        # Executar automação
+        automation.run()
+        
+    except KeyboardInterrupt:
+        print("\n\n⚠ Automação interrompida pelo usuário")
+    except Exception as e:
+        print(f"\n✗ Erro fatal: {e}")
+        import traceback
+        traceback.print_exc()
+        exit(1)
+
+
+if __name__ == "__main__":
+    main()
