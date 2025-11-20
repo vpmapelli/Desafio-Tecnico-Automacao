@@ -5,22 +5,25 @@ População com 60 anos ou mais por Unidades da Federação
 """
 
 import argparse
-import os
 import time
 from pathlib import Path
-from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
+from playwright.sync_api import sync_playwright
 
 
+#TODO: environment
 TABLE = "1209"
 DEFAULT_SLEEP_SECONDS = 1
 DEFAULT_TIMEOUT_MS = 1000
 DEFAULT_PAGE_TIMEOUT_MS = 10000
 MODAL_TIMEOUT_MS = 500
-DOWNLOAD_TIMEOUT_MS = 30000  # Timeout para operações de download
+DOWNLOAD_TIMEOUT_MS = 30000
 AGE_SELECTORS = [
     'text="60 a 69 anos"',
     'text="70 anos ou mais"',
 ]
+BASE_URL = "https://sidra.ibge.gov.br/"
+OUTPUT_FILE = "populacao_60mais_1209.csv"
+OUTPUT_PATH = "dados"
 
 
 class SidraAutomation:
@@ -28,9 +31,9 @@ class SidraAutomation:
 
     def __init__(self, headless=False):
         self.headless = headless
-        self.base_url = "https://sidra.ibge.gov.br/"
-        self.output_dir = Path("dados")
-        self.output_file = self.output_dir / "populacao_60mais_1209.csv"
+        self.base_url = BASE_URL
+        self.output_dir = Path(OUTPUT_PATH)
+        self.output_file = self.output_dir / OUTPUT_FILE
 
     def setup(self):
         """Configura o diretório de saída"""
