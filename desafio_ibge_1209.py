@@ -12,6 +12,8 @@ from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeo
 
 TABLE = '1209'
 DEFAULT_SLEEP_SECONDS = 1
+DEFAULT_TIMEOUT_MS = 1000
+DEFAULT_PAGE_TIMEOUT_MS = 10000
 class SidraAutomation:
     """Classe para automação de extração de dados do SIDRA/IBGE"""
     
@@ -102,7 +104,7 @@ class SidraAutomation:
             for selector in variable_selectors:
                 try:
                     age_control = page.locator(selector).first
-                    if age_control.is_visible(timeout=2000):
+                    if age_control.is_visible(timeout=DEFAULT_TIMEOUT_MS):
                         # Clicar para expandir opções
                         age_control.click()
                         time.sleep(1)
@@ -141,7 +143,7 @@ class SidraAutomation:
             for selector in territorial_selectors:
                 try:
                     territorial_control = page.locator(selector).first
-                    if territorial_control.is_visible(timeout=2000):
+                    if territorial_control.is_visible(timeout=DEFAULT_TIMEOUT_MS):
                         territorial_control.click()
                         print("✓ Recorte territorial 'Unidades da Federação' configurado")
                         time.sleep(1)
@@ -160,7 +162,7 @@ class SidraAutomation:
             for selector in apply_buttons:
                 try:
                     apply_btn = page.locator(selector).first
-                    if apply_btn.is_visible(timeout=2000):
+                    if apply_btn.is_visible(timeout=DEFAULT_TIMEOUT_MS):
                         apply_btn.click()
                         print("✓ Filtros aplicados")
                         page.wait_for_load_state("networkidle")
@@ -253,7 +255,7 @@ class SidraAutomation:
             page = context.new_page()
             
             # Configurar timeout padrão
-            page.set_default_timeout(30000)
+            page.set_default_timeout(DEFAULT_PAGE_TIMEOUT_MS)
             
             try:
                 # Executar fluxo de automação
