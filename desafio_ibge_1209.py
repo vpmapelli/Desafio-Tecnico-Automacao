@@ -129,26 +129,6 @@ class SidraAutomation:
                 except:
                     continue
             
-            # Verificar se há botão para aplicar filtros ou visualizar tabela
-            apply_buttons = [
-                'button:has-text("Aplicar")',
-                'button:has-text("Visualizar")',
-                'button:has-text("Consultar")',
-                'a:has-text("Visualizar")',
-            ]
-            
-            for selector in apply_buttons:
-                try:
-                    apply_btn = page.locator(selector).first
-                    if apply_btn.is_visible(timeout=DEFAULT_TIMEOUT_MS):
-                        apply_btn.click()
-                        print("✓ Filtros aplicados")
-                        page.wait_for_load_state("networkidle")
-                        time.sleep(2)
-                        break
-                except:
-                    continue
-            
             print("✓ Tabela configurada com sucesso")
             
         except Exception as e:
@@ -159,60 +139,45 @@ class SidraAutomation:
         """Realiza o download do arquivo CSV"""
         print("\n[4/5] Iniciando download do arquivo CSV...")
         
-        try:
-            # Procurar pelo botão/link de download CSV
-            download_selectors = [
-                'a:has-text("CSV")',
-                'button:has-text("CSV")',
-                'a[href*="csv"]',
-                'text="Download"',
-                'text="Baixar"',
-                'a:has-text("Exportar")',
-            ]
-            
-            download_link = None
-            for selector in download_selectors:
-                try:
-                    elements = page.locator(selector).all()
-                    for element in elements:
-                        if element.is_visible():
-                            text = element.inner_text().lower()
-                            if "csv" in text or "download" in text or "baixar" in text:
-                                download_link = element
-                                print(f"✓ Botão de download encontrado: {text}")
-                                break
-                    if download_link:
-                        break
-                except:
-                    continue
-            
-            if not download_link:
-                # Tentar encontrar qualquer link relacionado a download
-                download_link = page.locator('a:has-text("CSV")').first
-            
-            # Configurar listener para download
-            with page.expect_download() as download_info:
-                download_link.click()
-                print("✓ Download iniciado...")
-            
-            download = download_info.value
-            
-            # Salvar arquivo no caminho especificado
-            download.save_as(self.output_file)
-            print(f"✓ Arquivo salvo em: {self.output_file}")
-            
-        except Exception as e:
-            print(f"✗ Erro no download: {e}")
-            print("Tentando método alternativo de download...")
-            
-            # Método alternativo: procurar por qualquer elemento relacionado a CSV
+        # Clicka no botão de download
+        apply_buttons = [
+            'button:has-text("Download")',
+        ]
+        
+        for selector in apply_buttons:
             try:
-                page.locator('text=/csv|download|baixar/i').first.click()
-                time.sleep(3)
-                print("✓ Download concluído (método alternativo)")
+                apply_btn = page.locator(selector).first
+                if apply_btn.is_visible(timeout=DEFAULT_TIMEOUT_MS):
+                    apply_btn.click()
+                    print("✓ Filtros aplicados")
+                    page.wait_for_load_state("networkidle")
+                    time.sleep(2)
+                    break
             except:
-                raise Exception("Não foi possível realizar o download do arquivo CSV")
-    
+                continue
+
+        # Configura download
+
+        # Espera modal aparecer
+        page.wait_for_selector('#modal-downloads.in', state='visible', timeout=DEFAULT_TIMEOUT_MS)
+
+        select_locator = page.locator('#modal-downloads select[name="formato-arquivo"]')
+
+        print("Seleciona formato CSV (BR)...")
+        select_locator.select_option(value="br.csv")
+
+        download_button = page.locator('#opcao-downloads')
+        # Configurar listener para download
+        with page.expect_download() as download_info:
+            download_button.click()
+            print("✓ Download iniciado...")
+            
+        download = download_info.value
+
+        # Salvar arquivo no caminho especificado
+        download.save_as(self.output_file)
+        print(f"✓ Arquivo salvo em: {self.output_file}")
+
     def run(self):
         """Executa a automação completa"""
         print("=" * 60)
