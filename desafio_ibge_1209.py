@@ -14,6 +14,8 @@ TABLE = '1209'
 DEFAULT_SLEEP_SECONDS = 1
 DEFAULT_TIMEOUT_MS = 1000
 DEFAULT_PAGE_TIMEOUT_MS = 10000
+MODAL_TIMEOUT_MS = 500
+DOWNLOAD_TIMEOUT_MS = 30000  # Timeout para operações de download
 AGE_SELECTORS = [
     'text="60 a 69 anos"',
     'text="70 anos ou mais"',
@@ -59,17 +61,17 @@ class SidraAutomation:
         try:
             print("Pesquisando tabela...")
         
-            search_icon_locator = page.locator('a[title="Pesquisa Tabela"]')
+            search_icon_locator = page.wait_for_selector('a[title="Pesquisa Tabela"]', timeout=DEFAULT_TIMEOUT_MS)
             search_icon_locator.click()
 
             print("Digitando string no campo de pesquisa...")
             
-            search_input_locator = page.locator('#sidra-pesquisa-lg input[placeholder="pesquisar"]')
+            search_input_locator = page.wait_for_selector('#sidra-pesquisa-lg input[placeholder="pesquisar"]', timeout=DEFAULT_TIMEOUT_MS)
             search_input_locator.fill(table)
 
             print("Submetendo pesquisa...")
             
-            search_button_locator = page.locator('#sidra-pesquisa-lg button:has-text("OK")')
+            search_button_locator = page.wait_for_selector('#sidra-pesquisa-lg button:has-text("OK")', timeout=DEFAULT_TIMEOUT_MS)
             search_button_locator.click()
 
             time.sleep(DEFAULT_SLEEP_SECONDS)
@@ -100,12 +102,13 @@ class SidraAutomation:
             
             for selector in AGE_SELECTORS:
                 try:
-                    option = page.locator(selector).first
-                    if option.is_visible(timeout=DEFAULT_TIMEOUT_MS):
+                    option = page.wait_for_selector(selector, timeout=DEFAULT_TIMEOUT_MS)
+                    if option.is_visible():
                         option.click()
                         print(f"✓ Grupo de idade {selector} selecionado")
                         time.sleep(1)
-                except:
+                except Exception as e:
+                    print(f"⚠ Não foi possível selecionar {selector}: {e}")
                     continue
             
             # Configurar Unidades da Federação
@@ -149,27 +152,28 @@ class SidraAutomation:
         
         for selector in apply_buttons:
             try:
-                apply_btn = page.locator(selector).first
-                if apply_btn.is_visible(timeout=DEFAULT_TIMEOUT_MS):
+                apply_btn = page.wait_for_selector(selector, timeout=DEFAULT_TIMEOUT_MS)
+                if apply_btn.is_visible():
                     apply_btn.click()
-                    print("✓ Filtros aplicados")
+                    print("✓ Botão Download clicado")
                     page.wait_for_load_state("networkidle")
                     time.sleep(2)
                     break
-            except:
+            except Exception as e:
+                print(f"⚠ Tentativa de clicar em '{selector}' falhou: {e}")
                 continue
 
         # Configura download
 
         # Espera modal aparecer
-        page.wait_for_selector('#modal-downloads.in', state='visible', timeout=DEFAULT_TIMEOUT_MS)
+        page.wait_for_selector('#modal-downloads.in', state='visible', timeout=MODAL_TIMEOUT_MS)
 
-        select_locator = page.locator('#modal-downloads select[name="formato-arquivo"]')
+        select_locator = page.wait_for_selector('#modal-downloads select[name="formato-arquivo"]', timeout=MODAL_TIMEOUT_MS)
 
         print("Seleciona formato CSV (BR)...")
         select_locator.select_option(value="br.csv")
 
-        download_button = page.locator('#opcao-downloads')
+        download_button = page.wait_for_selector('#opcao-downloads', timeout=DOWNLOAD_TIMEOUT_MS)
         # Configurar listener para download
         with page.expect_download() as download_info:
             download_button.click()
