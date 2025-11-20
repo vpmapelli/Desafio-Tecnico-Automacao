@@ -111,23 +111,26 @@ class SidraAutomation:
             # Configurar Unidades da Federação
             print("→ Configurando 'Unidades da Federação'...")
             
-            territorial_selectors = [
-                'text="Unidade da Federação"',
-                'text="Unidades da Federação"',
-                'text="Brasil e Unidade da Federação"',
-                'label:has-text("Federação")',
-            ]
-            
-            for selector in territorial_selectors:
-                try:
-                    territorial_control = page.locator(selector).first
-                    if territorial_control.is_visible(timeout=DEFAULT_TIMEOUT_MS):
-                        territorial_control.click()
-                        print("✓ Recorte territorial 'Unidades da Federação' configurado")
-                        time.sleep(1)
-                        break
-                except:
-                    continue
+            all_list_items = page.locator('#arvore-niveis > li').all()
+
+            for item_locator in all_list_items:
+                target_label = "Unidade da Federação"
+
+                toggle_button_locator = item_locator.locator('.nome-arvore .sidra-toggle').first
+                
+                # Item que queremos selecionar "Unidade da Federação"
+                is_target_item = item_locator.text_content().strip().startswith(target_label)
+                
+                # Check the current state using the parent div's class
+                is_currently_checked = 'checked' in item_locator.locator('.sidra-check').first.get_attribute('class')
+
+                if is_target_item and not is_currently_checked:
+                    print(f"  ->  Selecionando: '{target_label}'.")
+                    toggle_button_locator.click()
+
+                if not is_target_item and is_currently_checked:
+                    print("  ->  Retirando da seleção item não desejado.")
+                    toggle_button_locator.click()
             
             print("✓ Tabela configurada com sucesso")
             
