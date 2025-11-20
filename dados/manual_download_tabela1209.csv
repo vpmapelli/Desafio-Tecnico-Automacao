@@ -1,0 +1,34 @@
+﻿"Tabela 1209 - População, por grupos de idade"
+"Variável - População (Pessoas)"
+"";"Ano x Grupo de idade"
+"";"2022"
+"";"Total";"60 a 69 anos";"70 anos ou mais"
+"Brasil";"203080756";"17820621";"14292869"
+"Fonte: IBGE - Censo Demográfico"
+
+"Notas"
+"1 - Até 1960, população presente. A partir daí, população residente;"
+"2 - Para 1872, os resultados não incluem 181 583 habitantes, estimados para 32 paróquias, nas quais não foi feito o recenseamento na data determinada;"
+"3 - Para 1940, exclusive 16 713 pessoas recenseadas cujas declarações não foram apuradas por extravio do material de coleta;"
+"4 - Para 1950, exclusive 31 960 pessoas recenseadas cujas declarações não foram apuradas por extravio do material de coleta;"
+"5 - Idades em anos completos; no censo de 1872, o grupo de 5 a 9 anos inclui as pessoas de 10 anos e, nos grupos subsequentes, as idades extremas excedem de uma unidade às especificadas para cada grupo;"
+"6 - Para 1900, o grupo de idade de 15 a 19 anos, incluiu as pessoas de 20 anos, e o grupo de idade de 20 a 24 anos, excluiu estas pessoas;"
+"7 - Para 1991, 2000, 2010 e 2022, dados do Universo."
+"8- Para 2022, os dados referentes aos municípios Abel Figueiredo (PA) e São Pedro da Água Branca (MA) foram corrigidos no dia 22/12/2023, impactando nos totais dos estados do Pará e do Maranhão e nos totais das Grandes Regiões do Norte e Nordeste."
+""
+"Legenda"
+"Símbolo";"Significado"
+"-";"Zero absoluto, não resultante de um cálculo ou arredondamento.
+Ex: Em determinado município não existem pessoas de 14 anos de idade sem instrução."
+"0";"Zero resultante de um cálculo ou arredondamento.
+Ex: A inflação do feijão em determinada Região Metropolitana foi 0.
+Determinado município produziu 400 kg de sementes de girassol e os dados da tabela são expressos em toneladas."
+"X";"Valor inibido para não identificar o informante.
+Ex: Determinado município só possui uma empresa produtora de cimento, logo o valor de sua produção deve ser inibido."
+"..";"Valor não se aplica.
+Ex: Não se pode obter o total da produção agrícola em determinado município quando os produtos agrícolas são contabilizados com unidades de medida distintas."
+"...";"Valor não disponível.
+Ex: A produção de feijão em determinado município não foi pesquisada ou determinado município não existia no ano da pesquisa."
+"A a Z
+(exceto X)";"Significa uma faixa de valores. Varia em função da tabela (se for o caso).
+Ex: O nível de precisão da produção estimada de combustíveis está na faixa A (95 a 100%)"
