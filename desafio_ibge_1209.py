@@ -10,6 +10,8 @@ from pathlib import Path
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
 
 
+TABLE = '1209'
+DEFAULT_SLEEP_SECONDS = 1
 class SidraAutomation:
     """Classe para automação de extração de dados do SIDRA/IBGE"""
     
@@ -35,128 +37,40 @@ class SidraAutomation:
         
         # Aguardar carregamento completo da página
         page.wait_for_load_state("domcontentloaded")
-        time.sleep(2)
+        time.sleep(DEFAULT_SLEEP_SECONDS)
         
         print("\n[2/5] Buscando pela tabela 1209...")
-        
-        # Estratégia: Usar a busca interna do site
-        # Procurar pelo campo de busca
         try:
-            # Tentar localizar o campo de pesquisa
-            search_selectors = [
-                'input[type="search"]',
-                'input[name="pesquisa"]',
-                'input[placeholder*="Pesquis"]',
-                'input[placeholder*="Busca"]',
-                '#pesquisa',
-                '.pesquisa'
-            ]
-            
-            search_input = None
-            for selector in search_selectors:
-                try:
-                    search_input = page.wait_for_selector(selector, timeout=3000)
-                    if search_input:
-                        print(f"✓ Campo de busca encontrado: {selector}")
-                        break
-                except:
-                    continue
-            
-            if not search_input:
-                # Se não encontrar campo de busca, tentar acessar diretamente por menus
-                print("⚠ Campo de busca não encontrado, tentando navegação por menus...")
-                self._navigate_by_menu(page)
-                return
-            
-            # Digitar o número da tabela
-            search_input.fill("1209")
-            print("✓ Termo '1209' digitado no campo de busca")
-            time.sleep(1)
-            
-            # Pressionar Enter ou clicar no botão de busca
-            search_input.press("Enter")
-            print("✓ Busca iniciada")
-            
-            # Aguardar resultados
-            page.wait_for_load_state("networkidle")
-            time.sleep(2)
-            
-            # Procurar pelo link da tabela 1209 nos resultados
-            print("✓ Procurando tabela 1209 nos resultados...")
-            
-            # Possíveis seletores para o resultado da tabela 1209
-            table_link_selectors = [
-                'a:has-text("1209")',
-                'a:has-text("Tabela 1209")',
-                'a[href*="1209"]',
-                'text=1209',
-            ]
-            
-            table_link = None
-            for selector in table_link_selectors:
-                try:
-                    elements = page.locator(selector).all()
-                    for element in elements:
-                        text = element.inner_text().lower()
-                        if "1209" in text and ("população" in text or "popula" in text):
-                            table_link = element
-                            print(f"✓ Link da tabela 1209 encontrado: {text[:50]}...")
-                            break
-                    if table_link:
-                        break
-                except:
-                    continue
-            
-            if not table_link:
-                # Tentar encontrar qualquer link com 1209
-                table_link = page.locator('a:has-text("1209")').first
-            
-            # Clicar no link da tabela
-            table_link.click()
-            print("✓ Acessando tabela 1209...")
-            
-            page.wait_for_load_state("networkidle")
-            time.sleep(2)
+            self._search_table(page, TABLE)
             
         except Exception as e:
             print(f"⚠ Erro na busca padrão: {e}")
-            print("Tentando método alternativo...")
-            self._navigate_by_menu(page)
+            #TODO: metodo alternativo
+            exit(1)
+            
     
-    def _navigate_by_menu(self, page):
-        """Método alternativo: navegar pelos menus do site"""
-        print("Navegando por menus...")
-        
-        # Tentar encontrar menu de tabelas ou pesquisas
+    def _search_table(self, page, table):
         try:
-            # Procurar por links ou menus que levem às tabelas
-            menu_selectors = [
-                'a:has-text("Tabelas")',
-                'a:has-text("Pesquisas")',
-                'a:has-text("Banco de Tabelas")',
-            ]
+            print("Pesquisando tabela...")
+        
+            search_icon_locator = page.locator('a[title="Pesquisa Tabela"]')
+            search_icon_locator.click()
+
+            print("Digitando string no campo de pesquisa...")
             
-            for selector in menu_selectors:
-                try:
-                    menu = page.wait_for_selector(selector, timeout=3000)
-                    if menu:
-                        menu.click()
-                        print(f"✓ Menu clicado: {selector}")
-                        page.wait_for_load_state("networkidle")
-                        time.sleep(2)
-                        break
-                except:
-                    continue
+            search_input_locator = page.locator('#sidra-pesquisa-lg input[placeholder="pesquisar"]')
+            search_input_locator.fill(table)
+
+            print("Submetendo pesquisa...")
             
-            # Agora buscar pela tabela 1209
-            link_1209 = page.locator('a:has-text("1209")').first
-            link_1209.click()
-            print("✓ Tabela 1209 acessada via menu")
-            page.wait_for_load_state("networkidle")
-            time.sleep(2)
-            
+            search_button_locator = page.locator('#sidra-pesquisa-lg button:has-text("OK")')
+            search_button_locator.click()
+
+            time.sleep(DEFAULT_SLEEP_SECONDS)
+            print("Pesquisa completa.")            
+
         except Exception as e:
-            print(f"✗ Erro ao navegar por menus: {e}")
+            print(f"✗ Erro ao pesquisar tabela {TABLE}: {e}")
             raise
     
     def configure_table(self, page):
@@ -170,7 +84,7 @@ class SidraAutomation:
         try:
             # Aguardar carregamento da interface da tabela
             page.wait_for_load_state("domcontentloaded")
-            time.sleep(3)
+            time.sleep(DEFAULT_SLEEP_SECONDS)
             
             # Procurar por elementos de filtro/configuração
             # Normalmente o SIDRA tem botões ou links para configurar variáveis
