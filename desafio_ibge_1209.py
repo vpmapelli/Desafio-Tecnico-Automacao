@@ -14,6 +14,10 @@ TABLE = '1209'
 DEFAULT_SLEEP_SECONDS = 1
 DEFAULT_TIMEOUT_MS = 1000
 DEFAULT_PAGE_TIMEOUT_MS = 10000
+AGE_SELECTORS = [
+    'text="60 a 69 anos"',
+    'text="70 anos ou mais"',
+]
 class SidraAutomation:
     """Classe para automação de extração de dados do SIDRA/IBGE"""
     
@@ -94,39 +98,13 @@ class SidraAutomation:
             # Estratégia: Procurar por "Grupo de idade" e configurar
             print("→ Configurando 'Grupo de idade: 60 anos ou mais'...")
             
-            # Tentar encontrar controles de variáveis
-            variable_selectors = [
-                'text="Grupo de idade"',
-                'text="Grupos de idade"',
-                'label:has-text("idade")',
-            ]
-            
-            for selector in variable_selectors:
+            for selector in AGE_SELECTORS:
                 try:
-                    age_control = page.locator(selector).first
-                    if age_control.is_visible(timeout=DEFAULT_TIMEOUT_MS):
-                        # Clicar para expandir opções
-                        age_control.click()
+                    option = page.locator(selector).first
+                    if option.is_visible(timeout=DEFAULT_TIMEOUT_MS):
+                        option.click()
+                        print(f"✓ Grupo de idade {selector} selecionado")
                         time.sleep(1)
-                        break
-                except:
-                    continue
-            
-            # Procurar pela opção "60 anos ou mais"
-            age_60_plus_selectors = [
-                'text="60 anos ou mais"',
-                'label:has-text("60 anos ou mais")',
-                'input[value*="60"]',
-            ]
-            
-            for selector in age_60_plus_selectors:
-                try:
-                    option_60 = page.locator(selector).first
-                    if option_60.is_visible(timeout=2000):
-                        option_60.click()
-                        print("✓ Grupo de idade '60 anos ou mais' selecionado")
-                        time.sleep(1)
-                        break
                 except:
                     continue
             
